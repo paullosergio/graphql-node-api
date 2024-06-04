@@ -1,0 +1,42 @@
+services:
+  api01: &api
+    hostname: api01
+    build: .
+    command: npx nodemon app.js
+    ports:
+      - "8080:3000"
+    depends_on:
+      - mongo
+
+  api02:
+    <<: *api
+    hostname: api02
+    ports:
+      - "8081:3000"
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api01
+      - api02
+    ports:
+      - "9999:9999"
+
+  mongo:
+    image: mongo
+    restart: always
+    ports:
+      - 27017:27017
+    hostname: mongo
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=mongo
+      - MONGO_INITDB_ROOT_PASSWORD=pass
+      - MONGO_INITDB_DATABASE=rbe
+    volumes:
+      - ./mongo/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+
+networks:
+  default:
+    driver: bridge
